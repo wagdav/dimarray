@@ -1,3 +1,13 @@
+"""
+>>> a = DimArray(range(10),dims=[('t',range(10))])
+>>> a.dims == (('t', range(10)),)
+True
+
+>>> a[:5].dims == (('t', [0, 1, 2, 3, 4]),)
+True
+
+"""
+
 import numpy as np
 
 class DimArray(np.ndarray):
@@ -34,6 +44,12 @@ class DimArray(np.ndarray):
             out_arr.dims = _dims_getitem(self.dims, y)
         return out_arr
 
+    def __getslice__(self, i, j):
+        out_arr = np.ndarray.__getslice__(self, i, j)
+        if not np.isscalar(out_arr):
+            out_arr.dims = _dims_getitem(self.dims, slice(i,j))
+        return out_arr
+
 def _dims_getitem(dimensions, key):
     """
     One dimensional tests:
@@ -42,8 +58,16 @@ def _dims_getitem(dimensions, key):
     >>> d ==  (('a', [4]),)
     True
 
-    >>> d=_dims_getitem(dims, slice(0,3,None))
+    >>> d=_dims_getitem(dims, slice(0, 3, None))
     >>> d == (('a', [0, 1, 2]),)
+    True
+
+    >>> d=_dims_getitem(dims, slice(None, 3,None))
+    >>> d == (('a', [0, 1, 2]),)
+    True
+
+    >>> d=_dims_getitem(dims, slice(3, None, None))
+    >>> d == (('a', [3, 4, 5]),)
     True
     """
     if isinstance(key, int):
@@ -54,12 +78,10 @@ def _dims_getitem(dimensions, key):
 
     from itertools import izip_longest
     ret=[]
-    for islice, idim in izip_longest(key, dimensions,
-            fillvalue=slice(None)):
-        if np.isscalar(idim[1]):
-            ret.append((idim[0], idim[1]))
-        else:
-            ret.append((idim[0], idim[1][islice]))
+    for rng, dim in izip_longest(key, dimensions, fillvalue=slice(None)):
+        dim_name, dim_range = dim
+        new_range = dim_range[rng]
+        ret.append((dim_name, new_range))
 
     return tuple(ret)
 
