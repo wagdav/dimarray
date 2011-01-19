@@ -1,0 +1,5 @@
+dimarray
+========
+
+DimArray is a subclass of numpy.ndarray equipped with named dimensions.
+
