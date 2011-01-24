@@ -35,6 +35,25 @@ Slices with Ellipsis
 
 >>> a[0,...,0].dims
 (('a', '1'), ('b', '123'), ('c', '1234'), ('d', '1'))
+
+
+Newaxis
+-------
+
+>>> import numpy as np
+>>> a = DimArray(range(10),dims=[('t',range(10))])
+>>> a.dims == (('t', range(10)),)
+True
+>>> a[...,np.newaxis].dims
+(('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), ('', [None]))
+
+>>> a[np.newaxis].dims
+(('', [None]), ('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]))
+
+
+>>> b = a[...,np.newaxis]
+>>> b[:,0].dims
+(('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), ('', None))
 """
 
 from itertools import izip_longest
@@ -102,7 +121,12 @@ def _dims_getitem(dimensions, key):
     if key is Ellipsis:
         key = (slice(None),)
 
-    key = list(key)
+    if key is None:
+        key = (None,slice(None))
+
+    empty_dimension = ('',[None])
+
+    key,dimensions = list(key), list(dimensions)
     ret = []
     ipad, i = 0, 0
     for rng, dim in izip_longest(key, dimensions,
@@ -115,10 +139,14 @@ def _dims_getitem(dimensions, key):
             key.insert(i+1, slice(None))
             ipad -= 1
 
-        dim_name, dim_range = dim
-        new_range = dim_range[rng]
+        if rng is None:
+            dimensions.insert(i+1, dim)
+            ret.append(empty_dimension)
+        else:
+            dim_name, dim_range = dim
+            new_range = dim_range[rng]
+            ret.append((dim_name, new_range))
 
-        ret.append((dim_name, new_range))
         i += 1
 
     return tuple(ret)
