@@ -111,15 +111,15 @@ def _dims_getitem(dimensions, key):
             ipad = len(dimensions) - len(key)
             rng = slice(None)
 
-        if ipad:
+        if ipad > 0:
             key.insert(i+1, slice(None))
-            ipad = ipad - 1
+            ipad -= 1
 
         dim_name, dim_range = dim
         new_range = dim_range[rng]
 
         ret.append((dim_name, new_range))
-        i = i + 1
+        i += 1
 
     return tuple(ret)
 
