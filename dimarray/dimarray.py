@@ -193,7 +193,15 @@ class DimArray(np.ndarray):
                 ipad -= 1
 
             dim_name, dim_range = dim
-            new_range = dim_range[rng]
+            
+            # Only slice dimensions for which the range is managed, too
+            if dim_range != self.empty_dimension[1]:
+                new_range = dim_range[rng]
+            # However, take care if a name-only dimension is set to singleton
+            elif isinstance(rng, int):
+                new_range = None
+            else:
+                new_range = dim_range
             ret.append((dim_name, new_range))
             i += 1
         return tuple(ret)
