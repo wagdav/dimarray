@@ -12,11 +12,7 @@ True
 2D case
 -------
 
-<<<<<<< HEAD
->>> dims = [('a', [0, 1, 2, 3, 4, 5]), ('b', [0, 1, 2])]
-=======
 >>> dims = [('a', range(6)), ('b', range(3))]
->>>>>>> 17711aa70a2bd84c02567f3d2a99318322e7ae78
 >>> a = DimArray(np.arange(6*3).reshape((6,3)), dims=dims)
 >>> a.dims == (('a', [0, 1, 2, 3, 4, 5]), ('b', [0, 1, 2]))
 True
