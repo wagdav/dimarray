@@ -25,6 +25,20 @@ True
 True
 
 
+Slice of a slice
+----------------
+
+>>> a = DimArray(np.random.rand(6,3), (('X', range(6)), ('comp', ['x', 'y', 'z'])))
+>>> b = a[0,:]
+>>> b.shape; b.dims
+(3,)
+(('X', 0), ('comp', ['x', 'y', 'z']))
+
+>>> c = b[0:2]
+>>> c.dims
+(('X', 0), ('comp', ['x', 'y']))
+
+
 Slices with Ellipsis
 --------------------
 
