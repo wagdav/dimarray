@@ -12,7 +12,11 @@ True
 2D case
 -------
 
+<<<<<<< HEAD
 >>> dims = [('a', [0, 1, 2, 3, 4, 5]), ('b', [0, 1, 2])]
+=======
+>>> dims = [('a', range(6)), ('b', range(3))]
+>>>>>>> 17711aa70a2bd84c02567f3d2a99318322e7ae78
 >>> a = DimArray(np.arange(6*3).reshape((6,3)), dims=dims)
 >>> a.dims == (('a', [0, 1, 2, 3, 4, 5]), ('b', [0, 1, 2]))
 True
@@ -23,6 +27,20 @@ True
 True
 >>> b[0, :].dims == (('a', 1), ('b', [0, 2]))
 True
+
+
+Slice of a slice
+----------------
+
+>>> a = DimArray(np.random.rand(6,3), (('X', range(6)), ('comp', ['x', 'y', 'z'])))
+>>> b = a[0,:]
+>>> b.shape; b.dims
+(3,)
+(('X', 0), ('comp', ['x', 'y', 'z']))
+
+>>> c = b[0:2]
+>>> c.dims
+(('X', 0), ('comp', ['x', 'y']))
 
 
 Slices with Ellipsis
@@ -98,7 +116,7 @@ class DimArray(np.ndarray):
     TODO
     """
     empty_dimension = ('', [None])
-    
+
     def __new__(cls, input_array, dims):
         obj = np.asarray(input_array).view(cls)
         obj.dims = tuple(dims)
@@ -143,7 +161,7 @@ class DimArray(np.ndarray):
 
     def __setitem__(self, key, value):
         raise NotImplementedError
-    
+
     # Deprecated, see http://docs.python.org/library/operator.html
     def __setslice__(self, start, stop, value):
         raise NotImplementedError
@@ -152,7 +170,7 @@ class DimArray(np.ndarray):
         for dim in self.dims:
             if isinstance(dim[1], (tuple, list)):
                 yield dim
-        
+
     def iter_dims(self):
         for dim in self.dims:
             # See PEP 342 for the new yield expression
@@ -164,7 +182,7 @@ class DimArray(np.ndarray):
                 yield None
                 # Next time we will yield the value sent
                 yield value_sent
-                
+
 
     def _check_dims(self):
         dims = [dim for dim in self.iter_dims_not_singleton()]
@@ -188,17 +206,16 @@ class DimArray(np.ndarray):
         key = list(key)
         ret = []
         iter_dims = self.iter_dims()
-        
+
         i, ipad = 0, 0
         for rng, dim in izip_longest(key, iter_dims, fillvalue=slice(None)):
-                
             if rng is np.newaxis:
                 # Repeat the dimension unless newaxis is at the end
                 if dim != slice(None):
                     iter_dims.send(dim)
                 ret.append(self.empty_dimension)
                 continue
-            
+
             # Add all existing singleton dimensions of dims to the returned
             # dims, too.
             while not isinstance(dim[1], (tuple, list)):
@@ -212,7 +229,6 @@ class DimArray(np.ndarray):
                         return tuple(ret)
                     else: # If no, let it be processed
                         break
-            #print 'rng:', rng, '  dim:', dim
 
             # If an ellipsis is present set a counter to insert as many full
             # slices instead as necessary. N.B. newaxis in key does not count!
@@ -225,7 +241,7 @@ class DimArray(np.ndarray):
                 ipad -= 1
 
             dim_name, dim_range = dim
-            
+
             # Only slice dimensions for which the range is managed, too
             if dim_range != self.empty_dimension[1]:
                 new_range = dim_range[rng]
