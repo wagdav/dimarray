@@ -110,9 +110,12 @@ class DimArray(np.ndarray):
     _counter = 0
     empty_dim_range = [None]
 
-    def __new__(cls, input_array, dims):
-        obj = np.asarray(input_array).view(cls)
-        obj.dims = OrderedDict(dims)
+    def __new__(cls, input_array, dims=None):
+        if isinstance(input_array, DimArray):
+            obj = input_array.view(cls)
+        else:
+            obj = np.asarray(input_array).view(cls)
+            obj.dims = OrderedDict(dims)
         try:
             obj._check_dims()
         except ValueError:
