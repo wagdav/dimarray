@@ -2,10 +2,9 @@
 1D case
 -------
 
->>> a = DimArray(range(10),dims=[('t',range(10))])
+>>> a = DimArray(range(10), dims=[('t',range(10))])
 >>> a.dims == (('t', range(10)),)
 True
-
 >>> a[:5].dims == (('t', [0, 1, 2, 3, 4]),)
 True
 
@@ -13,15 +12,16 @@ True
 2D case
 -------
 
->>> dims = [('a', [0,1,2,3,4,5]), ('b', [0,1,2])]
+>>> dims = [('a', [0, 1, 2, 3, 4, 5]), ('b', [0, 1, 2])]
 >>> a = DimArray(np.arange(6*3).reshape((6,3)), dims=dims)
->>> b = a[1:3,0::2]
 >>> a.dims == (('a', [0, 1, 2, 3, 4, 5]), ('b', [0, 1, 2]))
 True
+>>> b = a[1:3, 0::2]
 >>> b.dims == (('a', [1, 2]), ('b', [0, 2]))
 True
->>> c = b[:,0]
->>> c.dims  == (('a', [1, 2]), ('b', 0))
+>>> b[:, 0].dims  == (('a', [1, 2]), ('b', 0))
+True
+>>> b[0, :].dims == (('a', 1), ('b', [0, 2]))
 True
 
 
@@ -29,30 +29,65 @@ Slices with Ellipsis
 --------------------
 
 >>> dims = [('a', range(2)), ('b', range(3)), ('c', range(4)), ('d', range(5))]
->>> a = DimArray(np.arange(2*3*4*5).reshape((2,3,4,5)), dims=dims)
->>> a[0,...,0].shape
-(3, 4)
->>> a[0,...,0].dims
-(('a', 0), ('b', [0, 1, 2]), ('c', [0, 1, 2, 3]), ('d', 0))
+>>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
+>>> a[0, ..., 0].dims == (('a', 0), ('b', [0, 1, 2]), ('c', [0, 1, 2, 3]),
+... ('d', 0))
+True
+>>> a[0, ...].dims == (('a', 0), ('b', [0, 1, 2]), ('c', [0, 1, 2, 3]),
+... ('d', [0, 1, 2, 3, 4]))
+True
+>>> a[..., 0].dims == (('a', [0, 1]), ('b', [0, 1, 2]), ('c', [0, 1, 2, 3]),
+... ('d', 0))
+True
 
 
 Newaxis
 -------
 
 >>> import numpy as np
->>> a = DimArray(range(10),dims=[('t',range(10))])
+>>> a = DimArray(range(10), dims=[('t', range(10))])
 >>> a.dims == (('t', range(10)),)
 True
->>> a[...,np.newaxis].dims
-(('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), ('', [None]))
+>>> a[..., np.newaxis].dims == (('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+... ('', [None]))
+True
+>>> a[np.newaxis].dims == (('', [None]), ('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]))
+True
+>>> b = a[..., np.newaxis]
+>>> b[:, 0].dims == (('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), ('', None))
+True
 
->>> a[np.newaxis].dims
-(('', [None]), ('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]))
+
+Non-managed ranges
+------------------
+
+>>> dims = [('a', range(2)), ('b', range(3)), ('c', [None]), ('d', range(5))]
+>>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
+>>> a[0, ..., 0].dims == (('a', 0), ('b', [0, 1, 2]), ('c', [None]), ('d', 0))
+True
+>>> a[..., 0, 0].dims == (('a', [0, 1]), ('b', [0, 1, 2]), ('c', None),
+... ('d', 0))
+True
 
 
->>> b = a[...,np.newaxis]
->>> b[:,0].dims
-(('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), ('', None))
+"Hardcore" tests
+----------------
+>>> dims = [('a', range(2)), ('b', range(3)), ('c', [None]), ('d', range(5))]
+>>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
+>>> a[0:1, ..., np.newaxis, 0, np.newaxis].dims == (('a', [0]),
+... ('b', [0, 1, 2]), ('c', [None]), ('', [None]), ('d', 0), ('', [None]))
+True
+
+
+Numpy ufuncs that do not alter the shape
+----------------------------------------
+
+>>> import numpy as np
+>>> dims = [('a', range(2)), ('b', range(3)), ('c', [None]), ('d', range(5))]
+>>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
+>>> b = np.exp(a)
+>>> b.dims == a.dims
+True
 """
 
 from itertools import izip_longest
@@ -60,11 +95,8 @@ import numpy as np
 
 class DimArray(np.ndarray):
     """
-    >>> dims = [('a', [0,1,2,3,4,5]), ('b', [0,1,2])]
-    >>> a = DimArray(np.arange(6*3).reshape((6,3)), dims=dims)
-    >>> b = a[1:3,0::2]
+    TODO
     """
-    
     empty_dimension = ('', [None])
     
     def __new__(cls, input_array, dims):
