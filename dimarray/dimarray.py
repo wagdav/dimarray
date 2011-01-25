@@ -112,9 +112,9 @@ class DimArray(np.ndarray):
         if obj is None: return
 
         if isinstance(obj, DimArray):
-            if obj.dims_buffer is not None:
-                self.dims = obj.dims_buffer
-                obj.dims_buffer = None
+            if obj._dims_buffer is not None:
+                self.dims = obj._dims_buffer
+                obj._dims_buffer = None
             else:
                 self.dims = obj.dims
             try:
@@ -124,14 +124,14 @@ class DimArray(np.ndarray):
                     'NumPy function called?)')
         else:
             self.dims = None
-        self.dims_buffer = None
+        self._dims_buffer = None
 
     #def __array_wrap__(self, out_arr, context=None):
     #    out_arr.dims = getattr(self, 'dims', None)
     #    return np.ndarray.__array_wrap__(self, out_arr, context)
 
     def __getitem__(self, key):
-        self.dims_buffer = self._dims_getitem(key)
+        self._dims_buffer = self._dims_getitem(key)
         item = np.ndarray.__getitem__(self, key)
         if not np.isscalar(item) and item.size == 0:
             raise ValueError('zero size arrays are not allowed.')
