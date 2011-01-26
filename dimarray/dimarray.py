@@ -149,20 +149,33 @@ class DimArray(np.ndarray):
     """
     DimArray is a subclass of np.ndarray equipped with named dimension ranges.
 
+    DimArray should be constructed using `dimarray`.
+
+    Parameters
+    ----------
+    input_array: array_like
+
+    dims : list of tuples
+        [(dimension_name0, range0), (dimension_name1, range1), ...]
+
+        The dimension name can any immutable objects. The length of ranges
+        must conform to the corresponding axis of `input_array`, i. e.
+            len(range_i) == input_array.shape[i]
+
     Example:
     --------
 
     >>> import numpy as np
     >>> a = DimArray(np.random.rand(2,3), [('x', range(2)), ('y', range(3))])
 
-    The range of the dimension is stored in the *dims* ordered dictionary.
+    The range of the dimension is stored in the `dims` ordered dictionary.
 
     >>> a.dims['y']
     [0, 1, 2]
     """
     empty_dim_range = []
 
-    def __new__(cls, input_array, dims=None):
+    def __new__(cls, input_array, dims):
         if isinstance(input_array, DimArray):
             obj = input_array.view(cls)
         else:
