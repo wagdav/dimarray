@@ -33,15 +33,15 @@ example voltage readings from multiple sensors:
 DimArray can be sliced just like numpy.ndarray. The corresponding ranges are
 sliced accordingly.
 
-The time trace of the second sensor on an interesting time interval can be
-obtained:
+For example, the time trace of the second sensor on an interesting time
+interval can be obtained:
 
 >>> mask = (0.2 < voltage.dims['time']) & (voltage.dims['time'] < 0.5)
 >>> interesting_data = voltage[1, mask]
 
-After slicing it remembers the voltage id:
+After slicing it remembers the sensor id:
 
->>> print voltage_2.dims['id']
+>>> print interesing_data.dims['id']
 1
 
 and so does the time range. Therefore one can easily plot the interesting
