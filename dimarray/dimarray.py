@@ -56,12 +56,22 @@ Newaxis
 >>> import numpy as np
 >>> a = DimArray(range(10), dims=[('t', range(10))])
 >>> a[np.newaxis].dims
-OrderedDict([(0, [None]), ('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])])
+OrderedDict([(0, []), ('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])])
 >>> b = a[..., np.newaxis]
 >>> b.dims
-OrderedDict([('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), (1, [None])])
+OrderedDict([('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), (1, [])])
 >>> b[:, 0].dims
 OrderedDict([('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), (1, None)])
+
+
+Numpy ndarray as range
+----------------------
+
+>>> import numpy as np
+>>> dims = [('a', np.arange(6)), ('b', np.arange(3))]
+>>> a = DimArray(np.arange(6*3).reshape((6,3)), dims=dims)
+>>> a[:, 0, np.newaxis].dims
+OrderedDict([('a', array([0, 1, 2, 3, 4, 5])), ('b', 0), (2, [])])
 
 
 Singleton dimensions
@@ -92,10 +102,10 @@ OrderedDict([('x', 0), ('y', 0), ('z', [0, 1, 2, 3])])
 Non-managed ranges
 ------------------
 
->>> dims = [('a', range(2)), ('b', range(3)), ('c', [None]), ('d', range(5))]
+>>> dims = [('a', range(2)), ('b', range(3)), ('c', []), ('d', range(5))]
 >>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
 >>> a[0, ..., 0].dims
-OrderedDict([('a', 0), ('b', [0, 1, 2]), ('c', [None]), ('d', 0)])
+OrderedDict([('a', 0), ('b', [0, 1, 2]), ('c', []), ('d', 0)])
 >>> a[..., 0, 0].dims
 OrderedDict([('a', [0, 1]), ('b', [0, 1, 2]), ('c', None), ('d', 0)])
 
@@ -104,22 +114,22 @@ Test with only integer keys in dims:
 >>> dims = [(0, range(2)), (1, range(3)), (2, range(4)), (3, range(5))]
 >>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
 >>> a[:, np.newaxis].dims
-OrderedDict([(0, [0, 1]), (1, [None]), (2, [0, 1, 2]), (3, [0, 1, 2, 3]), (4, [0, 1, 2, 3, 4])])
+OrderedDict([(0, [0, 1]), (1, []), (2, [0, 1, 2]), (3, [0, 1, 2, 3]), (4, [0, 1, 2, 3, 4])])
 
 
 "Hardcore" tests
 ----------------
->>> dims = [('a', range(2)), ('b', range(3)), ('c', [None]), ('d', range(5))]
+>>> dims = [('a', range(2)), ('b', range(3)), ('c', []), ('d', range(5))]
 >>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
 >>> a[0:1, ..., np.newaxis, 0, np.newaxis].dims
-OrderedDict([('a', [0]), ('b', [0, 1, 2]), ('c', [None]), (3, [None]), ('d', 0), (5, [None])])
+OrderedDict([('a', [0]), ('b', [0, 1, 2]), ('c', []), (3, []), ('d', 0), (5, [])])
 
 
 Numpy ufuncs that do not alter the shape
 ----------------------------------------
 
 >>> import numpy as np
->>> dims = [('a', range(2)), ('b', range(3)), ('c', [None]), ('d', range(5))]
+>>> dims = [('a', range(2)), ('b', range(3)), ('c', []), ('d', range(5))]
 >>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
 >>> b = np.exp(a)
 >>> b.dims == a.dims
@@ -139,7 +149,7 @@ class DimArray(np.ndarray):
     """
     TODO
     """
-    empty_dim_range = [None]
+    empty_dim_range = []
 
     def __new__(cls, input_array, dims=None):
         if isinstance(input_array, DimArray):
@@ -195,7 +205,7 @@ class DimArray(np.ndarray):
 
     def iter_dims_not_singleton(self):
         for name, range_ in self.dims.iteritems():
-            if isinstance(range_, (tuple, list)):
+            if np.iterable(range_):
                 yield name, range_
 
     def iter_dims(self):
@@ -250,13 +260,13 @@ class DimArray(np.ndarray):
             # Add all existing singleton dimensions of dims to the returned
             # dims, too
             try:
-                while not isinstance(dim[1], (tuple, list)):
+                while not np.iterable(dim[1]):
                     ret.append(dim)
                     # Skip their processing
                     dim = iter_dims.next()
             except StopIteration:
                 # Do not continue processing if last dimension is singleton
-                if not isinstance(dim[1], (tuple, list)):
+                if not np.iterable(dim[1]):
                     break
 
             # If an ellipsis is present set a counter to insert as many full
