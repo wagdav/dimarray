@@ -107,7 +107,6 @@ class DimArray(np.ndarray):
     """
     TODO
     """
-    _counter = 0
     empty_dim_range = [None]
 
     def __new__(cls, input_array, dims=None):
@@ -212,9 +211,7 @@ class DimArray(np.ndarray):
                 # Repeat the dimension unless newaxis is at the end
                 if dim != slice(None):
                     iter_dims.send(dim)
-                ret.append(('newaxis' + str(self._counter),
-                           self.empty_dim_range))
-                self._counter += 1
+                ret.append(None)
                 continue
 
             # Add all existing singleton dimensions of dims to the returned
@@ -253,6 +250,11 @@ class DimArray(np.ndarray):
                 new_range = dim_range
             ret.append((dim_name, new_range))
             i += 1
+
+        for i, d in enumerate(ret):
+            if d is None:
+                ret[i] = (i, self.empty_dim_range)
+
         return OrderedDict(ret)
 
 
