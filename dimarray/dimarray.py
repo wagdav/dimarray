@@ -314,6 +314,31 @@ class DimArray(np.ndarray):
         return OrderedDict(ret)
 
 
+def dimarray(iterable, **kwargs):
+    """
+    Construct a DimArray instance in a convenient way.
+
+    Usage:
+
+    >>> import numpy as np
+    >>> d = dimarray([[0, 1, 2], [3, 4, 5]], x=np.arange(3), y=np.arange(2),
+    ... order='yx')
+    >>> d.dims
+    OrderedDict([('y', array([0, 1])), ('x', array([0, 1, 2]))])
+    """
+    try:
+        order = tuple(kwargs.pop('order'))
+    except KeyError:
+        raise ValueError('no order specified.')
+
+    try:
+        dims = [(key, kwargs[key]) for key in order]
+    except KeyError:
+        raise ValueError('invalid dimension listed in order.')
+
+    return DimArray(iterable, dims=dims)
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod(verbose=False)
