@@ -147,7 +147,18 @@ else:
 
 class DimArray(np.ndarray):
     """
-    TODO
+    DimArray is a subclass of np.ndarray equipped with named dimension ranges.
+
+    Example:
+    --------
+
+    >>> import numpy as np
+    >>> a = DimArray(np.random.rand(2,3), [('x', range(2)), ('y', range(3))])
+
+    The range of the dimension is stored in the *dims* ordered dictionary.
+
+    >>> a.dims['y']
+    [0, 1, 2]
     """
     empty_dim_range = []
 

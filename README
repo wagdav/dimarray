@@ -1,5 +1,50 @@
 dimarray
 ========
 
-DimArray is a subclass of numpy.ndarray equipped with named dimensions.
+DimArray is a subclass of numpy.ndarray equipped with named dimension ranges. It
+is an N-dimensional array which remembers the ranges of the N dimensions it
+has.
 
+Example:
+--------
+
+A time series of voltage readings from a sensor:
+
+>>> import numpy as np
+>>> voltage_data = np.random.rand(10)
+>>> time_index = np.linspace(0, 1, 10)
+>>> voltage = DimArray(voltage_data, [('time', time_index)])
+
+The range of the dimension is stored in the *dims* ordered dictionary.
+
+>>> (voltage.dims['time'] == time_index).all()
+True
+
+
+It is more useful if one wants to work with arrays of many dimensions. For
+example voltage readings from multiple sensors:
+
+>>> voltage_data = np.random.rand(5, 10)
+>>> time_index = np.linspace(0, 1, 10)
+>>> sensor_id = range(5)
+
+>>> voltage = DimArray(voltage_data, [('id', sensor_id), ('time', time_index)])
+
+DimArray can be sliced just like numpy.ndarray. The corresponding ranges are
+sliced accordingly.
+
+The time trace of the second sensor on an interesting time interval can be
+obtained:
+
+>>> mask = (0.2 < voltage.dims['time']) & (voltage.dims['time'] < 0.5)
+>>> interesting_data = voltage[1, mask]
+
+After slicing it remembers the voltage id:
+
+>>> print voltage_2.dims['id']
+1
+
+and so does the time range. Therefore one can easily plot the interesting
+voltage curve as a function of time.
+
+>>> plot(interesting_data.dims['time'], interesting_data)
