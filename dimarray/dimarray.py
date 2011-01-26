@@ -56,12 +56,12 @@ Newaxis
 >>> import numpy as np
 >>> a = DimArray(range(10), dims=[('t', range(10))])
 >>> a[np.newaxis].dims
-OrderedDict([('newaxis0', [None]), ('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])])
+OrderedDict([(0, [None]), ('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])])
 >>> b = a[..., np.newaxis]
 >>> b.dims
-OrderedDict([('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), ('newaxis1', [None])])
+OrderedDict([('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), (1, [None])])
 >>> b[:, 0].dims
-OrderedDict([('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), ('newaxis1', None)])
+OrderedDict([('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), (1, None)])
 
 
 Non-managed ranges
@@ -74,13 +74,20 @@ OrderedDict([('a', 0), ('b', [0, 1, 2]), ('c', [None]), ('d', 0)])
 >>> a[..., 0, 0].dims
 OrderedDict([('a', [0, 1]), ('b', [0, 1, 2]), ('c', None), ('d', 0)])
 
+Test with only integer keys in dims:
+
+>>> dims = [(0, range(2)), (1, range(3)), (2, range(4)), (3, range(5))]
+>>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
+>>> a[:,np.newaxis].dims
+OrderedDict([(0, [0, 1]), (1, [None]), (2, [0, 1, 2]), (3, [0, 1, 2, 3]), (4, [0, 1, 2, 3, 4])])
+
 
 "Hardcore" tests
 ----------------
 >>> dims = [('a', range(2)), ('b', range(3)), ('c', [None]), ('d', range(5))]
 >>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
 >>> a[0:1, ..., np.newaxis, 0, np.newaxis].dims
-OrderedDict([('a', [0]), ('b', [0, 1, 2]), ('c', [None]), ('newaxis0', [None]), ('d', 0), ('newaxis1', [None])])
+OrderedDict([('a', [0]), ('b', [0, 1, 2]), ('c', [None]), (3, [None]), ('d', 0), (5, [None])])
 
 
 Numpy ufuncs that do not alter the shape
@@ -211,7 +218,7 @@ class DimArray(np.ndarray):
                 # Repeat the dimension unless newaxis is at the end
                 if dim != slice(None):
                     iter_dims.send(dim)
-                ret.append(None)
+                ret.append((None, self.empty_dim_range))
                 continue
 
             # Add all existing singleton dimensions of dims to the returned
@@ -251,9 +258,11 @@ class DimArray(np.ndarray):
             ret.append((dim_name, new_range))
             i += 1
 
-        for i, d in enumerate(ret):
-            if d is None:
+        for i, (key, dim_range) in enumerate(ret):
+            if key is None:
                 ret[i] = (i, self.empty_dim_range)
+            elif isinstance(key, int):
+                ret[i] = (i, dim_range)
 
         return OrderedDict(ret)
 
