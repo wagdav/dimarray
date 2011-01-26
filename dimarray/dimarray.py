@@ -64,6 +64,31 @@ OrderedDict([('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), (1, [None])])
 OrderedDict([('t', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), (1, None)])
 
 
+Singleton dimensions
+--------------------
+
+>>> dims = [('x', range(2)), ('y', range(3)), ('z', range(4))]
+>>> a = DimArray(np.arange(2 * 3 * 4).reshape((2, 3, 4)), dims=dims)
+>>> a.dims
+OrderedDict([('x', [0, 1]), ('y', [0, 1, 2]), ('z', [0, 1, 2, 3])])
+
+Test if last dim in dims is a singleton
+
+>>> b = a[..., 0]
+>>> b.dims
+OrderedDict([('x', [0, 1]), ('y', [0, 1, 2]), ('z', 0)])
+>>> b[..., 0].dims
+OrderedDict([('x', [0, 1]), ('y', 0), ('z', 0)])
+
+Test if last dim in dims is not a singleton
+
+>>> b = a[:, 0, :]
+>>> b.dims
+OrderedDict([('x', [0, 1]), ('y', 0), ('z', [0, 1, 2, 3])])
+>>> b[0, :].dims
+OrderedDict([('x', 0), ('y', 0), ('z', [0, 1, 2, 3])])
+
+
 Non-managed ranges
 ------------------
 
@@ -78,7 +103,7 @@ Test with only integer keys in dims:
 
 >>> dims = [(0, range(2)), (1, range(3)), (2, range(4)), (3, range(5))]
 >>> a = DimArray(np.arange(2 * 3 * 4 * 5).reshape((2, 3, 4, 5)), dims=dims)
->>> a[:,np.newaxis].dims
+>>> a[:, np.newaxis].dims
 OrderedDict([(0, [0, 1]), (1, [None]), (2, [0, 1, 2]), (3, [0, 1, 2, 3]), (4, [0, 1, 2, 3, 4])])
 
 
@@ -175,9 +200,9 @@ class DimArray(np.ndarray):
 
     def iter_dims(self):
         for dim in self.dims.iteritems():
-            # See PEP 342 for the new yield expression
+            # See PEP 342 for the new yield expression.
             # This allows to temporarily insert a user defined element into the
-            # iteration, exploited when handling newaxis.
+            # iteration, exploited when handling newaxis
             value_sent = (yield dim)
             if value_sent is not None:
                 # send() immediately yields a value which we discard
@@ -218,22 +243,21 @@ class DimArray(np.ndarray):
                 # Repeat the dimension unless newaxis is at the end
                 if dim != slice(None):
                     iter_dims.send(dim)
+                # Signal newaxis by inserting new dimension with name None
                 ret.append((None, self.empty_dim_range))
                 continue
 
             # Add all existing singleton dimensions of dims to the returned
-            # dims, too.
-            while not isinstance(dim[1], (tuple, list)):
-                ret.append(dim)
-                try:
+            # dims, too
+            try:
+                while not isinstance(dim[1], (tuple, list)):
+                    ret.append(dim)
                     # Skip their processing
                     dim = iter_dims.next()
-                except StopIteration:
-                    # If last dimension is a singleton return immediately
-                    if not isinstance(dim[1], (tuple, list)):
-                        return OrderedDict(ret)
-                    else: # If no, let it be processed
-                        break
+            except StopIteration:
+                # Do not continue processing if last dimension is singleton
+                if not isinstance(dim[1], (tuple, list)):
+                    break
 
             # If an ellipsis is present set a counter to insert as many full
             # slices instead as necessary. N.B. newaxis in key does not count!
@@ -258,6 +282,8 @@ class DimArray(np.ndarray):
             ret.append((dim_name, new_range))
             i += 1
 
+        # For all newaxis inserted, let their name be their position index
+        # (int) and renumber all existing dims with integer names accordingly
         for i, (key, dim_range) in enumerate(ret):
             if key is None:
                 ret[i] = (i, self.empty_dim_range)
