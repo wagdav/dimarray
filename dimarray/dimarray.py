@@ -212,8 +212,6 @@ class DimArray(np.ndarray):
     def __getitem__(self, key):
         self._dims_buffer = self._dims_getitem(key)
         item = np.ndarray.__getitem__(self, key)
-        if not np.isscalar(item) and item.size == 0:
-            raise ValueError('zero size arrays are not allowed.')
         return item
 
     # Deprecated, see http://docs.python.org/library/operator.html
