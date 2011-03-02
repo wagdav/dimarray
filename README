@@ -11,9 +11,10 @@ Example:
 A time series of voltage readings from a sensor:
 
 >>> import numpy as np
+>>> import dimarray as da
 >>> voltage_data = np.random.rand(10)
 >>> time_index = np.linspace(0, 1, 10)
->>> voltage = DimArray(voltage_data, [('time', time_index)])
+>>> voltage = da.DimArray(voltage_data, [('time', time_index)])
 
 The range of the dimension is stored in the *dims* ordered dictionary.
 
@@ -28,7 +29,7 @@ example voltage readings from multiple sensors:
 >>> time_index = np.linspace(0, 1, 10)
 >>> sensor_id = range(5)
 
->>> voltage = DimArray(voltage_data, [('id', sensor_id), ('time', time_index)])
+>>> voltage = da.DimArray(voltage_data, [('id', sensor_id), ('time', time_index)])
 
 DimArray can be sliced just like numpy.ndarray. The corresponding ranges are
 sliced accordingly.
@@ -41,10 +42,11 @@ interval can be obtained:
 
 After slicing it remembers the sensor id:
 
->>> print interesing_data.dims['id']
+>>> print interesting_data.dims['id']
 1
 
 and so does the time range. Therefore one can easily plot the interesting
 voltage curve as a function of time.
 
->>> plot(interesting_data.dims['time'], interesting_data)
+>>> import matplotlib.pyplot as plt
+>>> lines=plt.plot(interesting_data.dims['time'], interesting_data)
